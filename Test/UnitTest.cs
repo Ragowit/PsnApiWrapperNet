@@ -85,7 +85,7 @@ namespace Test
         [TestMethod]
         public void TestTrophies()
         {
-            Trophies result = _psn.Trophies("NPWR09206_00", "default", "trophy"); // Gems of War
+            TitleTrophies result = _psn.TitleTrophies("NPWR09206_00", "default", "trophy"); // Gems of War
 
             Assert.IsTrue(result.trophies.Count == 18);
         }
@@ -93,7 +93,7 @@ namespace Test
         [TestMethod]
         public void TestTrophies_PS5WithReward()
         {
-            Trophies result = _psn.Trophies("NPWR22792_00", "default", "trophy2"); // Destruction AllStars
+            TitleTrophies result = _psn.TitleTrophies("NPWR22792_00", "default", "trophy2"); // Destruction AllStars
 
             Assert.AreEqual("21", result.trophies[2].trophyProgressTargetValue);
             Assert.AreEqual("Emote", result.trophies[2].trophyRewardName);
@@ -102,7 +102,7 @@ namespace Test
         [TestMethod]
         public void TestTrophyGroups()
         {
-            TrophyGroups result = _psn.TrophyGroups("NPWR09206_00", "trophy"); // Gems of War
+            TitleTrophyGroups result = _psn.TitleTrophyGroups("NPWR09206_00", "trophy"); // Gems of War
 
             Assert.IsTrue(result.trophyGroups.Count >= 27);
         }

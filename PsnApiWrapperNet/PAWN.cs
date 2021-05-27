@@ -190,7 +190,7 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public Trophies Trophies(string npCommunicationId, string groupId, string npServiceName)
+        public TitleTrophies TitleTrophies(string npCommunicationId, string groupId, string npServiceName)
         {
             try
             {
@@ -198,7 +198,7 @@ namespace PsnApiWrapperNet
                     .AddParameter("npServiceName", npServiceName);
                 var response = _restClientBase.Get(request);
 
-                return JsonSerializer.Deserialize<Trophies>(response.Content);
+                return JsonSerializer.Deserialize<TitleTrophies>(response.Content);
             }
             catch (Exception)
             {
@@ -206,7 +206,7 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public TrophyGroups TrophyGroups(string npCommunicationId, string npServiceName)
+        public TitleTrophyGroups TitleTrophyGroups(string npCommunicationId, string npServiceName)
         {
             try
             {
@@ -214,7 +214,7 @@ namespace PsnApiWrapperNet
                     .AddParameter("npServiceName", npServiceName);
                 var response = _restClientBase.Get(request);
 
-                return JsonSerializer.Deserialize<TrophyGroups>(response.Content);
+                return JsonSerializer.Deserialize<TitleTrophyGroups>(response.Content);
             }
             catch (Exception)
             {
