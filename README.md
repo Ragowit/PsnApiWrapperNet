@@ -9,4 +9,4 @@ which can be found here once you have logged in on your PlayStation account: htt
 Here are some unofficial documentation about the API: https://github.com/andshrew/PlayStation-Trophies
 
 # Install
-Install using nuget, https://www.nuget.org/packages/PsnApiWrapperNet/0.1.0
+Install using nuget, https://www.nuget.org/packages/PsnApiWrapperNet
