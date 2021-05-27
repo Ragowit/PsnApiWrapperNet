@@ -6,7 +6,7 @@
     <Authors>Markus 'Ragowit' Persson</Authors>
     <Company>grh.se</Company>
     <Description>PSN API Wrapper .NET (PAWN) is a tool to fetch PlayStation Network data.</Description>
-    <PackageLicenseExpression>GPL</PackageLicenseExpression>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <PackageTags>PSN, PlayStation, trophies</PackageTags>
     <RepositoryUrl>https://github.com/Ragowit/PsnApiWrapperNet</RepositoryUrl>
   </PropertyGroup>
