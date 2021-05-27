@@ -7,3 +7,6 @@ In order to use this tool so does it need an active npsso token,
 which can be found here once you have logged in on your PlayStation account: https://ca.account.sony.com/api/v1/ssocookie
 
 Here are some unofficial documentation about the API: https://github.com/andshrew/PlayStation-Trophies
+
+# Install
+Install using nuget, https://www.nuget.org/packages/PsnApiWrapperNet/0.1.0
