@@ -11,8 +11,4 @@
     <RepositoryUrl>https://github.com/Ragowit/PsnApiWrapperNet</RepositoryUrl>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="RestSharp" Version="110.2.0" />
-  </ItemGroup>
-
 </Project>

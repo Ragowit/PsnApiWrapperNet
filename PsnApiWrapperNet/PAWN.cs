@@ -1,10 +1,13 @@
 ﻿using System;
-using System.Linq;
-using System.Text.Json;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Web;
+using System.Xml.Linq;
 using PsnApiWrapperNet.Model;
-using RestSharp;
-using RestSharp.Authenticators;
 
 namespace PsnApiWrapperNet
 {
@@ -13,20 +16,18 @@ namespace PsnApiWrapperNet
 
     public class PAWN
     {
-        private static readonly RestClient _restClientAuth = new("https://ca.account.sony.com/api");
-        private static readonly RestClient _restClientBase = new("https://m.np.playstation.net/api/");
-        private static readonly string _version = "0.1.0";
+        private readonly HttpClient _httpClient;
+        private readonly string _token;
 
         public PAWN(string npsso)
         {
-            _restClientAuth.FollowRedirects = false;
-            _restClientAuth.AddDefaultHeader("User-Agent", $"PSN API Wrapper .NET ~ {_version}");
-            _restClientAuth.AddDefaultHeader("Cookie", $"npsso={npsso}");
-            _restClientAuth.AddDefaultHeader("Authorization", "Basic YWM4ZDE2MWEtZDk2Ni00NzI4LWIwZWEtZmZlYzIyZjY5ZWRjOkRFaXhFcVhYQ2RYZHdqMHY=");
-
             try
             {
-                _restClientBase.Authenticator = new JwtAuthenticator(Authenticate());
+                _httpClient = new HttpClient()
+                {
+                    BaseAddress = new Uri("https://m.np.playstation.com")
+                };
+                _token = Authenticate(npsso);
             }
             catch (Exception)
             {
@@ -34,24 +35,32 @@ namespace PsnApiWrapperNet
             }
         }
 
-        private static string Authenticate()
+        private static string GetCode(string npsso)
         {
             try
             {
-                var requestGet = new RestRequest("authz/v3/oauth/authorize")
-                    .AddParameter("client_id", "ac8d161a-d966-4728-b0ea-ffec22f69edc")
-                    .AddParameter("redirect_uri", "com.playstation.PlayStationApp://redirect")
-                    .AddParameter("response_type", "code")
-                    .AddParameter("scope", "psn:mobile.v1 psn:clientapp");
-                var responseGet = _restClientAuth.Get(requestGet);
-                var location = ((string)responseGet.Headers.First(x => x.Name == "Location").Value).Replace("com.playstation.playstationapp://redirect/", "");
-                var code = HttpUtility.ParseQueryString(location).Get("code");
+                var httpClient = new HttpClient()
+                {
+                    BaseAddress = new Uri("https://ca.account.sony.com")
+                };
 
-                var requestPost = new RestRequest("authz/v3/oauth/token", DataFormat.Json)
-                    .AddParameter("application/x-www-form-urlencoded", $"grant_type=authorization_code&redirect_uri=com.playstation.PlayStationApp://redirect&code={code}", ParameterType.RequestBody);
-                var responsePost = _restClientAuth.Post(requestPost);
+                var requestParams = new List<string>
+                {
+                    "access_type=offline",
+                    "client_id=09515159-7237-4370-9b40-3806e67c0891",
+                    "response_type=code",
+                    "scope=psn:mobile.v2.core psn:clientapp",
+                    "redirect_uri=com.scee.psxandroid.scecompcall://redirect"
+                };
+                using HttpRequestMessage requestGet = new(
+                    HttpMethod.Get,
+                    "api/authz/v3/oauth/authorize" + "?" + string.Join("&", requestParams)
+                    );
+                requestGet.Headers.Add("Cookie", $"npsso={npsso}");
+                using HttpResponseMessage responseGet = httpClient.Send(requestGet);
+                var query = HttpUtility.ParseQueryString(responseGet.Headers.Location.Query);
 
-                return JsonSerializer.Deserialize<Auth>(responsePost.Content).access_token;
+                return query["code"];
             }
             catch (Exception)
             {
@@ -59,15 +68,47 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public GameList GameList(string accountId, int offset = 0)
+        private async Task<string> GetAccessTokenAsync(string code)
         {
             try
             {
-                var request = new RestRequest($"gamelist/v2/users/{accountId}/titles")
-                    .AddParameter("offset", offset);
-                var response = _restClientBase.Get(request);
+                var httpClient = new HttpClient()
+                {
+                    BaseAddress = new Uri("https://ca.account.sony.com")
+                };
 
-                return JsonSerializer.Deserialize<GameList>(response.Content);
+                using HttpRequestMessage requestPost = new(
+                    HttpMethod.Post,
+                    "api/authz/v3/oauth/token"
+                    );
+                requestPost.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+                {
+                    { "code", code },
+                    { "grant_type", "authorization_code" },
+                    { "redirect_uri", "com.scee.psxandroid.scecompcall://redirect" },
+                    { "token_format", "jwt" }
+                });
+                requestPost.Headers.Add("Authorization", "Basic MDk1MTUxNTktNzIzNy00MzcwLTliNDAtMzgwNmU2N2MwODkxOnVjUGprYTV0bnRCMktxc1A=");
+                using HttpResponseMessage responsePost = httpClient.Send(requestPost);
+                Auth auth = (await responsePost.Content.ReadFromJsonAsync<Auth>());
+
+                return auth.access_token;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        private string Authenticate(string npsso)
+        {
+            try
+            {
+                var code = GetCode(npsso);
+                var token = GetAccessTokenAsync(code).Result;
+
+                return token;
             }
             catch (Exception)
             {
@@ -75,14 +116,22 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public Player Player(string accountId)
+        public async Task<GameList> GameListAsync(string accountId, int offset = 0)
         {
             try
             {
-                var request = new RestRequest($"userProfile/v1/internal/users/{accountId}/profiles");
-                var response = _restClientBase.Get(request);
+                using HttpRequestMessage request = new(
+                    HttpMethod.Get,
+                    $"api/gamelist/v2/users/{accountId}/titles"
+                    );
+                request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+                {
+                    { "offset", offset.ToString() }
+                });
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                using HttpResponseMessage response = _httpClient.Send(request);
 
-                return JsonSerializer.Deserialize<Player>(response.Content);
+                return await response.Content.ReadFromJsonAsync<GameList>();
             }
             catch (Exception)
             {
@@ -90,14 +139,18 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public PlayerSummary PlayerSummary(string accountId)
+        public async Task<Player> PlayerAsync(string accountId)
         {
             try
             {
-                var request = new RestRequest($"trophy/v1/users/{accountId}/trophySummary");
-                var response = _restClientBase.Get(request);
+                using HttpRequestMessage request = new(
+                    HttpMethod.Get,
+                    $"api/userProfile/v1/internal/users/{accountId}/profiles"
+                    );
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                using HttpResponseMessage response = _httpClient.Send(request);
 
-                return JsonSerializer.Deserialize<PlayerSummary>(response.Content);
+                return await response.Content.ReadFromJsonAsync<Player>();
             }
             catch (Exception)
             {
@@ -105,15 +158,18 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public PlayerTitles PlayerTitles(string accountId, string npTitleIds)
+        public async Task<PlayerSummary> PlayerSummaryAsync(string accountId)
         {
             try
             {
-                var request = new RestRequest($"trophy/v1/users/{accountId}/titles/trophyTitles")
-                    .AddParameter("npTitleIds", npTitleIds);
-                var response = _restClientBase.Get(request);
+                using HttpRequestMessage request = new(
+                    HttpMethod.Get,
+                    $"api/trophy/v1/users/{accountId}/trophySummary"
+                    );
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                using HttpResponseMessage response = _httpClient.Send(request);
 
-                return JsonSerializer.Deserialize<PlayerTitles>(response.Content);
+                return await response.Content.ReadFromJsonAsync<PlayerSummary>();
             }
             catch (Exception)
             {
@@ -121,15 +177,20 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public PlayerTrophies PlayerTrophies(string accountId, string npCommunicationId, string groupId, string npServiceName)
+        public async Task<PlayerTitles> PlayerTitlesAsync(string accountId, string npTitleIds)
         {
             try
             {
-                var request = new RestRequest($"trophy/v1/users/{accountId}/npCommunicationIds/{npCommunicationId}/trophyGroups/{groupId}/trophies")
-                    .AddParameter("npServiceName", npServiceName);
-                var response = _restClientBase.Get(request);
+                using HttpRequestMessage request = new(
+                    HttpMethod.Get,
+                    $"api/trophy/v1/users/{accountId}/titles/trophyTitles"
+                    + "?"
+                    + $"npTitleIds={npTitleIds}"
+                    );
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                using HttpResponseMessage response = _httpClient.Send(request);
 
-                return JsonSerializer.Deserialize<PlayerTrophies>(response.Content);
+                return await response.Content.ReadFromJsonAsync<PlayerTitles>();
             }
             catch (Exception)
             {
@@ -137,15 +198,20 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public PlayerTrophyGroups PlayerTrophyGroups(string accountId, string npCommunicationId, string npServiceName)
+        public async Task<PlayerTrophies> PlayerTrophiesAsync(string accountId, string npCommunicationId, string groupId, string npServiceName)
         {
             try
             {
-                var request = new RestRequest($"trophy/v1/users/{accountId}/npCommunicationIds/{npCommunicationId}/trophyGroups")
-                    .AddParameter("npServiceName", npServiceName);
-                var response = _restClientBase.Get(request);
+                using HttpRequestMessage request = new(
+                    HttpMethod.Get,
+                    $"api/trophy/v1/users/{accountId}/npCommunicationIds/{npCommunicationId}/trophyGroups/{groupId}/trophies"
+                    + "?"
+                    + $"npServiceName={npServiceName}"
+                    );
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                using HttpResponseMessage response = _httpClient.Send(request);
 
-                return JsonSerializer.Deserialize<PlayerTrophyGroups>(response.Content);
+                return await response.Content.ReadFromJsonAsync<PlayerTrophies>();
             }
             catch (Exception)
             {
@@ -153,15 +219,20 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public PlayerTrophyTitles PlayerTrophyTitles(string accountId, int offset = 0)
+        public async Task<PlayerTrophyGroups> PlayerTrophyGroupsAsync(string accountId, string npCommunicationId, string npServiceName)
         {
             try
             {
-                var request = new RestRequest($"trophy/v1/users/{accountId}/trophyTitles")
-                    .AddParameter("offset", offset);
-                var response = _restClientBase.Get(request);
+                using HttpRequestMessage request = new(
+                    HttpMethod.Get,
+                    $"api/trophy/v1/users/{accountId}/npCommunicationIds/{npCommunicationId}/trophyGroups"
+                    + "?"
+                    + $"npServiceName={npServiceName}"
+                    );
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                using HttpResponseMessage response = _httpClient.Send(request);
 
-                return JsonSerializer.Deserialize<PlayerTrophyTitles>(response.Content);
+                return await response.Content.ReadFromJsonAsync<PlayerTrophyGroups>();
             }
             catch (Exception)
             {
@@ -169,20 +240,22 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public UniversalSearch SearchPlayer(string name)
+        public async Task<PlayerTrophyTitles> PlayerTrophyTitlesAsync(string accountId, int offset = 0)
         {
             try
             {
-                var request = new RestRequest("search/v1/universalSearch")
-                    .AddParameter("searchDomains", "SocialAllAccounts")
-                    .AddParameter("countryCode", "us")
-                    .AddParameter("languageCode", "en")
-                    .AddParameter("age", 69)
-                    .AddParameter("pageSize", 50)
-                    .AddParameter("searchTerm", name);
-                var response = _restClientBase.Get(request);
+                using HttpRequestMessage request = new(
+                    HttpMethod.Get,
+                    $"api/trophy/v1/users/{accountId}/trophyTitles"
+                    );
+                request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+                {
+                    { "offset", offset.ToString() }
+                });
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                using HttpResponseMessage response = _httpClient.Send(request);
 
-                return JsonSerializer.Deserialize<UniversalSearch>(response.Content);
+                return await response.Content.ReadFromJsonAsync<PlayerTrophyTitles>();
             }
             catch (Exception)
             {
@@ -190,15 +263,30 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public TitleTrophies TitleTrophies(string npCommunicationId, string groupId, string npServiceName)
+        public async Task<UniversalSearch> SearchPlayerAsync(string name)
         {
             try
             {
-                var request = new RestRequest($"trophy/v1/npCommunicationIds/{npCommunicationId}/trophyGroups/{groupId}/trophies")
-                    .AddParameter("npServiceName", npServiceName);
-                var response = _restClientBase.Get(request);
+                using HttpRequestMessage request = new(
+                    HttpMethod.Get,
+                    $"api/search/v1/universalSearch"
+                    + "?"
+                    + "searchDomains=SocialAllAccounts"
+                    + "&"
+                    + "countryCode=us"
+                    + "&"
+                    + "languageCode=en"
+                    + "&"
+                    + "age=69"
+                    + "&"
+                    + "pageSize=50"
+                    + "&"
+                    + $"searchTerm={name}"
+                    );
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                using HttpResponseMessage response = _httpClient.Send(request);
 
-                return JsonSerializer.Deserialize<TitleTrophies>(response.Content);
+                return await response.Content.ReadFromJsonAsync<UniversalSearch>();
             }
             catch (Exception)
             {
@@ -206,15 +294,41 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public TitleTrophyGroups TitleTrophyGroups(string npCommunicationId, string npServiceName)
+        public async Task<TitleTrophies> TitleTrophiesAsync(string npCommunicationId, string groupId, string npServiceName)
         {
             try
             {
-                var request = new RestRequest($"trophy/v1/npCommunicationIds/{npCommunicationId}/trophyGroups")
-                    .AddParameter("npServiceName", npServiceName);
-                var response = _restClientBase.Get(request);
+                using HttpRequestMessage request = new(
+                    HttpMethod.Get,
+                    $"api/trophy/v1/npCommunicationIds/{npCommunicationId}/trophyGroups/{groupId}/trophies"
+                    + "?"
+                    + $"npServiceName={npServiceName}"
+                    );
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                using HttpResponseMessage response = _httpClient.Send(request);
 
-                return JsonSerializer.Deserialize<TitleTrophyGroups>(response.Content);
+                return await response.Content.ReadFromJsonAsync<TitleTrophies>();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<TitleTrophyGroups> TitleTrophyGroupsAsync(string npCommunicationId, string npServiceName)
+        {
+            try
+            {
+                using HttpRequestMessage request = new(
+                    HttpMethod.Get,
+                    $"api/trophy/v1/npCommunicationIds/{npCommunicationId}/trophyGroups"
+                    + "?"
+                    + $"npServiceName={npServiceName}"
+                    );
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                using HttpResponseMessage response = _httpClient.Send(request);
+
+                return await response.Content.ReadFromJsonAsync<TitleTrophyGroups>();
             }
             catch (Exception)
             {
