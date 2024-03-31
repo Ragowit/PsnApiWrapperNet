@@ -91,6 +91,15 @@ namespace Test
         }
 
         [TestMethod]
+        public void TestSearchPlayerWithNullCountry()
+        {
+            SocialMetadata result = _psn.SearchPlayerAsync("Bugs-DK38").Result.FirstResult();
+
+            Assert.AreEqual("7410023915507426860", result.accountId);
+            Assert.IsNull(result.country);
+        }
+
+        [TestMethod]
         public void TestTrophies()
         {
             TitleTrophies result = _psn.TitleTrophiesAsync("NPWR09206_00", "default", "trophy").Result; // Gems of War
