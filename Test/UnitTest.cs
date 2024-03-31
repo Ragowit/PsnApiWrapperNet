@@ -87,6 +87,12 @@ namespace Test
             SocialMetadata result = _psn.SearchPlayerAsync("Ragowit").Result.FirstResult();
 
             Assert.AreEqual("1882371903386905898", result.accountId);
+            Assert.IsNotNull(result.avatarUrl);
+            Assert.AreEqual("SE", result.country);
+            Assert.IsNotNull(result.highlights);
+            Assert.IsFalse(result.isOfficiallyVerified);
+            Assert.IsTrue(result.isPsPlus);
+            Assert.AreEqual("en", result.language);
             Assert.AreEqual("Ragowit", result.onlineId);
         }
 
@@ -96,7 +102,9 @@ namespace Test
             SocialMetadata result = _psn.SearchPlayerAsync("Bugs-DK38").Result.FirstResult();
 
             Assert.AreEqual("7410023915507426860", result.accountId);
+            Assert.IsNull(result.avatarUrl);
             Assert.IsNull(result.country);
+            Assert.IsNull(result.language);
         }
 
         [TestMethod]
