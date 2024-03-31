@@ -26,6 +26,14 @@ namespace Test
         }
 
         [TestMethod]
+        public void TestGameListNextOffsetNull()
+        {
+            var result = _psn.GameListAsync("3342351313068632439").Result;
+
+            Assert.IsNull(result.nextOffset);
+        }
+
+        [TestMethod]
         public void TestPlayer()
         {
             Player result = _psn.PlayerAsync(_accountId).Result;
