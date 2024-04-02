@@ -240,7 +240,7 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public async Task<PlayerTrophyTitles> PlayerTrophyTitlesAsync(string accountId, int offset = 0)
+        public async Task<PlayerTrophyTitles> PlayerTrophyTitlesAsync(string accountId, int offset = 0, int limit = 100)
         {
             try
             {
@@ -249,6 +249,8 @@ namespace PsnApiWrapperNet
                     $"api/trophy/v1/users/{accountId}/trophyTitles"
                     + "?"
                     + $"offset={offset}"
+                    + "&"
+                    + $"limit={limit}"
                     );
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
                 using HttpResponseMessage response = _httpClient.Send(request);
