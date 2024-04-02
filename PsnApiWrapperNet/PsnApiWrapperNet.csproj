@@ -9,6 +9,18 @@
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <PackageTags>PSN, PlayStation, trophies</PackageTags>
     <RepositoryUrl>https://github.com/Ragowit/PsnApiWrapperNet</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Ragowit/PsnApiWrapperNet/</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>- Fxied offset in GameList and PlayerTrophyTitles
+- Implemtend limit in GameList and PlayerTrophyTitles
+</PackageReleaseNotes>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
 </Project>
