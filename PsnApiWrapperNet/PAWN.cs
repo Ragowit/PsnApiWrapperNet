@@ -123,11 +123,9 @@ namespace PsnApiWrapperNet
                 using HttpRequestMessage request = new(
                     HttpMethod.Get,
                     $"api/gamelist/v2/users/{accountId}/titles"
+                    + "?"
+                    + $"offset={offset}"
                     );
-                request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
-                {
-                    { "offset", offset.ToString() }
-                });
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
                 using HttpResponseMessage response = _httpClient.Send(request);
 

@@ -26,6 +26,14 @@ namespace Test
         }
 
         [TestMethod]
+        public void TestGameListOffset()
+        {
+            var result = _psn.GameListAsync(_accountId, 10).Result;
+
+            Assert.IsFalse(result.previousOffset == 0);
+        }
+
+        [TestMethod]
         public void TestGameListNextOffsetNull()
         {
             var result = _psn.GameListAsync("3342351313068632439").Result;
