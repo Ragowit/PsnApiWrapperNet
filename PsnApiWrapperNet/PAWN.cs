@@ -247,11 +247,9 @@ namespace PsnApiWrapperNet
                 using HttpRequestMessage request = new(
                     HttpMethod.Get,
                     $"api/trophy/v1/users/{accountId}/trophyTitles"
+                    + "?"
+                    + $"offset={offset}"
                     );
-                request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
-                {
-                    { "offset", offset.ToString() }
-                });
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
                 using HttpResponseMessage response = _httpClient.Send(request);
 

@@ -98,6 +98,14 @@ namespace Test
         }
 
         [TestMethod]
+        public void TestPlayerTrophyTitlesOffset()
+        {
+            PlayerTrophyTitles result = _psn.PlayerTrophyTitlesAsync(_accountId, 100).Result;
+
+            Assert.IsTrue(result.nextOffset == 200);
+        }
+
+        [TestMethod]
         public void TestSearchPlayer()
         {
             SocialMetadata result = _psn.SearchPlayerAsync("Ragowit").Result.FirstResult();
