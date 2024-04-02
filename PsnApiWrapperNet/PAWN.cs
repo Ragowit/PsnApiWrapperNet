@@ -116,7 +116,7 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public async Task<GameList> GameListAsync(string accountId, int offset = 0)
+        public async Task<GameList> GameListAsync(string accountId, int offset = 0, int limit = 10)
         {
             try
             {
@@ -125,6 +125,8 @@ namespace PsnApiWrapperNet
                     $"api/gamelist/v2/users/{accountId}/titles"
                     + "?"
                     + $"offset={offset}"
+                    + "&"
+                    + $"limit={limit}"
                     );
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
                 using HttpResponseMessage response = _httpClient.Send(request);
