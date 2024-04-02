@@ -11,7 +11,7 @@
     <RepositoryUrl>https://github.com/Ragowit/PsnApiWrapperNet</RepositoryUrl>
     <PackageProjectUrl>https://github.com/Ragowit/PsnApiWrapperNet/</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>- Fxied offset in GameList and PlayerTrophyTitles
+    <PackageReleaseNotes>- Fixed offset in GameList and PlayerTrophyTitles
 - Implemtend limit in GameList and PlayerTrophyTitles
 </PackageReleaseNotes>
   </PropertyGroup>
