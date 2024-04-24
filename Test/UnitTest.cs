@@ -54,7 +54,31 @@ namespace Test
         {
             Player result = _psn.PlayerAsync(_accountId).Result;
 
+            Assert.IsNotNull(result.aboutMe);
+            Assert.AreEqual(4, result.avatars.Count);
+            Assert.IsNull(result.error);
+            Assert.IsFalse(result.isMe);
+            Assert.IsFalse(result.isOfficiallyVerified);
+            Assert.IsTrue(result.isPlus);
+            Assert.AreEqual(2, result.languages.Count);
             Assert.AreEqual("Ragowit", result.onlineId);
+        }
+
+        [TestMethod]
+        public void TestPlayerWithError()
+        {
+            Player result = _psn.PlayerAsync("5524975455069480019").Result;
+
+            Assert.IsNull(result.aboutMe);
+            Assert.IsNull(result.avatars);
+            Assert.AreEqual(2281485, result.error.code);
+            Assert.AreEqual("Resource not found (account='5524975455069480019')", result.error.message);
+            Assert.IsNotNull(result.error.referenceId);
+            Assert.IsFalse(result.isMe);
+            Assert.IsFalse(result.isOfficiallyVerified);
+            Assert.IsFalse(result.isPlus);
+            Assert.IsNull(result.languages);
+            Assert.IsNull(result.onlineId);
         }
 
         [TestMethod]

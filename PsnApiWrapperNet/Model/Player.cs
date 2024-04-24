@@ -6,6 +6,7 @@ namespace PsnApiWrapperNet.Model
     {
         public string aboutMe { get; set; }
         public List<Avatar> avatars { get; set; }
+        public Error error { get; set; }
         public bool isMe { get; set; }
         public bool isOfficiallyVerified { get; set; }
         public bool isPlus { get; set; }
