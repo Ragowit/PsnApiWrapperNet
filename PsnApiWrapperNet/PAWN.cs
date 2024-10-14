@@ -17,7 +17,7 @@ namespace PsnApiWrapperNet
     public class PAWN
     {
         private readonly HttpClient _httpClient;
-        private readonly string _token;
+        private readonly Auth _auth;
 
         public PAWN(string npsso)
         {
@@ -27,7 +27,7 @@ namespace PsnApiWrapperNet
                 {
                     BaseAddress = new Uri("https://m.np.playstation.com")
                 };
-                _token = Authenticate(npsso);
+                _auth = Authenticate(npsso);
             }
             catch (Exception)
             {
@@ -68,7 +68,7 @@ namespace PsnApiWrapperNet
             }
         }
 
-        private async Task<string> GetAccessTokenAsync(string code)
+        private async Task<Auth> GetAccessTokenAsync(string code)
         {
             try
             {
@@ -92,7 +92,7 @@ namespace PsnApiWrapperNet
                 using HttpResponseMessage responsePost = httpClient.Send(requestPost);
                 Auth auth = (await responsePost.Content.ReadFromJsonAsync<Auth>());
 
-                return auth.access_token;
+                return auth;
             }
             catch (Exception)
             {
@@ -101,19 +101,24 @@ namespace PsnApiWrapperNet
             }
         }
 
-        private string Authenticate(string npsso)
+        private Auth Authenticate(string npsso)
         {
             try
             {
                 var code = GetCode(npsso);
-                var token = GetAccessTokenAsync(code).Result;
+                var auth = GetAccessTokenAsync(code).Result;
 
-                return token;
+                return auth;
             }
             catch (Exception)
             {
                 throw;
             }
+        }
+
+        public Auth GetAuth()
+        {
+            return _auth;
         }
 
         public async Task<GameList> GameListAsync(string accountId, int offset = 0, int limit = 10)
@@ -128,7 +133,7 @@ namespace PsnApiWrapperNet
                     + "&"
                     + $"limit={limit}"
                     );
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _auth.access_token);
                 using HttpResponseMessage response = _httpClient.Send(request);
 
                 return await response.Content.ReadFromJsonAsync<GameList>();
@@ -147,7 +152,7 @@ namespace PsnApiWrapperNet
                     HttpMethod.Get,
                     $"api/userProfile/v1/internal/users/{accountId}/profiles"
                     );
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _auth.access_token);
                 using HttpResponseMessage response = _httpClient.Send(request);
 
                 return await response.Content.ReadFromJsonAsync<Player>();
@@ -166,7 +171,7 @@ namespace PsnApiWrapperNet
                     HttpMethod.Get,
                     $"api/trophy/v1/users/{accountId}/trophySummary"
                     );
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _auth.access_token);
                 using HttpResponseMessage response = _httpClient.Send(request);
 
                 return await response.Content.ReadFromJsonAsync<PlayerSummary>();
@@ -187,7 +192,7 @@ namespace PsnApiWrapperNet
                     + "?"
                     + $"npTitleIds={npTitleIds}"
                     );
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _auth.access_token);
                 using HttpResponseMessage response = _httpClient.Send(request);
 
                 return await response.Content.ReadFromJsonAsync<PlayerTitles>();
@@ -198,7 +203,7 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public async Task<PlayerTrophies> PlayerTrophiesAsync(string accountId, string npCommunicationId, string groupId, string npServiceName)
+        public async Task<Trophies> PlayerTrophiesAsync(string accountId, string npCommunicationId, string groupId, string npServiceName)
         {
             try
             {
@@ -208,10 +213,10 @@ namespace PsnApiWrapperNet
                     + "?"
                     + $"npServiceName={npServiceName}"
                     );
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _auth.access_token);
                 using HttpResponseMessage response = _httpClient.Send(request);
 
-                return await response.Content.ReadFromJsonAsync<PlayerTrophies>();
+                return await response.Content.ReadFromJsonAsync<Trophies>();
             }
             catch (Exception)
             {
@@ -219,7 +224,7 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public async Task<PlayerTrophyGroups> PlayerTrophyGroupsAsync(string accountId, string npCommunicationId, string npServiceName)
+        public async Task<TrophyGroups> PlayerTrophyGroupsAsync(string accountId, string npCommunicationId, string npServiceName)
         {
             try
             {
@@ -229,10 +234,10 @@ namespace PsnApiWrapperNet
                     + "?"
                     + $"npServiceName={npServiceName}"
                     );
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _auth.access_token);
                 using HttpResponseMessage response = _httpClient.Send(request);
 
-                return await response.Content.ReadFromJsonAsync<PlayerTrophyGroups>();
+                return await response.Content.ReadFromJsonAsync<TrophyGroups>();
             }
             catch (Exception)
             {
@@ -240,7 +245,7 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public async Task<PlayerTrophyTitles> PlayerTrophyTitlesAsync(string accountId, int offset = 0, int limit = 100)
+        public async Task<TrophyTitles> PlayerTrophyTitlesAsync(string accountId, int offset = 0, int limit = 100)
         {
             try
             {
@@ -252,10 +257,10 @@ namespace PsnApiWrapperNet
                     + "&"
                     + $"limit={limit}"
                     );
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _auth.access_token);
                 using HttpResponseMessage response = _httpClient.Send(request);
 
-                return await response.Content.ReadFromJsonAsync<PlayerTrophyTitles>();
+                return await response.Content.ReadFromJsonAsync<TrophyTitles>();
             }
             catch (Exception)
             {
@@ -283,7 +288,7 @@ namespace PsnApiWrapperNet
                     + "&"
                     + $"searchTerm={name}"
                     );
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _auth.access_token);
                 using HttpResponseMessage response = _httpClient.Send(request);
 
                 return await response.Content.ReadFromJsonAsync<UniversalSearch>();
@@ -294,7 +299,7 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public async Task<TitleTrophies> TitleTrophiesAsync(string npCommunicationId, string groupId, string npServiceName)
+        public async Task<Trophies> TitleTrophiesAsync(string npCommunicationId, string groupId, string npServiceName)
         {
             try
             {
@@ -304,10 +309,10 @@ namespace PsnApiWrapperNet
                     + "?"
                     + $"npServiceName={npServiceName}"
                     );
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _auth.access_token);
                 using HttpResponseMessage response = _httpClient.Send(request);
 
-                return await response.Content.ReadFromJsonAsync<TitleTrophies>();
+                return await response.Content.ReadFromJsonAsync<Trophies>();
             }
             catch (Exception)
             {
@@ -315,7 +320,7 @@ namespace PsnApiWrapperNet
             }
         }
 
-        public async Task<TitleTrophyGroups> TitleTrophyGroupsAsync(string npCommunicationId, string npServiceName)
+        public async Task<TrophyGroups> TitleTrophyGroupsAsync(string npCommunicationId, string npServiceName)
         {
             try
             {
@@ -325,10 +330,10 @@ namespace PsnApiWrapperNet
                     + "?"
                     + $"npServiceName={npServiceName}"
                     );
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _auth.access_token);
                 using HttpResponseMessage response = _httpClient.Send(request);
 
-                return await response.Content.ReadFromJsonAsync<TitleTrophyGroups>();
+                return await response.Content.ReadFromJsonAsync<TrophyGroups>();
             }
             catch (Exception)
             {

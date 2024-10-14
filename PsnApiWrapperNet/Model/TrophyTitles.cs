@@ -2,7 +2,7 @@
 
 namespace PsnApiWrapperNet.Model
 {
-    public class PlayerTrophyTitles
+    public class TrophyTitles
     {
         public int nextOffset { get; set; }
         public int totalItemCount { get; set; }

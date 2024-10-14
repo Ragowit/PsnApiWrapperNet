@@ -17,7 +17,6 @@ namespace PsnApiWrapperNet.Model
         public int playCount { get; set; }
         public string playDuration { get; set; }
         public string service { get; set; }
-        public List<object> stats { get; set; }
         public string titleId { get; set; }
     }
 }
